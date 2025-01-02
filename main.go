@@ -96,6 +96,15 @@ func handleCommand(input string) {
 	case "list":
 		listKeys()
 
+	case "watch":
+		if len(parts) < 2 {
+			fmt.Println("Usage: watch <key>")
+			return
+		}
+
+		key := parts[1]
+		watchKey(key)
+
 	default:
 		fmt.Printf("Unknown command: %s. Type 'help' for a list of commands.\n", command)
 	}
@@ -109,6 +118,7 @@ Commands:
   get <key>           Get the value of a key from etcd
   delete <key>        Delete a key from etcd
   list                List all keys stored in etcd
+  watch <key> 	   	  Watch a key for changes
   exit                Exit the console
 `)
 }
@@ -171,5 +181,14 @@ func listKeys() {
 	fmt.Println("Stored Keys:")
 	for _, kv := range resp.Kvs {
 		fmt.Printf("%s = %s\n", kv.Key, kv.Value)
+	}
+}
+
+func watchKey(key string) {
+	rch := etcdClient.Watch(context.Background(), key)
+	for wresp := range rch {
+		for _, ev := range wresp.Events {
+			fmt.Printf("Type: %s Key: %s Value: %s\n", ev.Type, ev.Kv.Key, ev.Kv.Value)
+		}
 	}
 }
